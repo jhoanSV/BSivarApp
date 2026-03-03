@@ -29,7 +29,13 @@ export const getTasks = async(req, res) => {
 export const ValidarDatos = async(req, res) => {
     try {
         const connection = await connect()
-        const [rows] = await connection.query("SELECT Cod, Cargo, Nombre FROM colaboradores WHERE Usuario = ? AND Contraseña = ?", [req.body.Email, req.body.Contraseña]);
+        const [rows] = await connection.query(`SELECT Cod,
+                                                      Cargo,
+                                                      Nombre
+                                               FROM 
+                                                colaboradores
+                                              WHERE
+                                                Usuario = ? AND Contraseña = ?`, [req.body.Email, req.body.Contraseña]);
         res.json(rows)
     connection.end()
     } catch (error) {
@@ -40,7 +46,25 @@ export const ValidarDatos = async(req, res) => {
 export const BuscarClientesTodos = async(req, res) => {
     try {
         const connection = await connect()
-        const [rows] = await connection.query("SELECT c.Cod, c.Nit, c.Ferreteria, c.Contacto, c.Telefono, c.Cel, c.Email, c.Direccion, c.Barrio, (SELECT nombreRuta FROM rutas WHERE codRuta= c.ruta) AS Ruta, c.Geolocalizacion , c.Nota FROM clientes AS c WHERE CodVendedor = ?", [req.params.cod]);
+        const [rows] = await connection.query(`SELECT
+                                                    c.Cod,
+                                                    c.Nit,
+                                                    c.Ferreteria,
+                                                    c.Contacto,
+                                                    c.Telefono,
+                                                    c.Cel,
+                                                    c.Email,
+                                                    c.Direccion,
+                                                    c.Barrio,
+                                                    r.nombreRuta AS Ruta,
+                                                    c.Geolocalizacion,
+                                                    c.Nota
+                                              FROM
+                                                    clientes AS c
+                                              LEFT JOIN
+                                                    rutas AS r ON r.codRuta= c.ruta
+                                              WHERE
+                                                    CodVendedor = ?`, [req.params.cod]);
         res.json(rows)
         connection.end()
     } catch (error) {
@@ -63,7 +87,7 @@ export const aTablas = async(req, res) => {
 export const consecutivos = async(req, res) => {
     try {
         const connection = await connect()
-        const [rows] = await connection.query("SELECT MAX("+ req.body.Columna +") + 1  As consecutivo FROM "+ req.body.Tabla);/*"SELECT (SELECT NPreFactura FROM consecutivos) As PreFactura, (SELECT MAX(ODePedido) FROM tabladeingresados) AS ODePedido");*/
+        const [rows] = await connection.query("SELECT MAX("+ req.body.Columna +") + 1  As consecutivo FROM "+ req.body.Tabla);
         res.json(rows)
         connection.end()
     } catch (error) {
@@ -184,7 +208,7 @@ export const ProductDataWeb = async(req, res) => {
                                                     p.PVenta,
                                                     p.Iva,
                                                     p.Agotado,
-                                                     p.Detalle,
+                                                    p.Detalle,
                                                     (
                                                         0.3 * IFNULL((p.PVenta - p.PCosto) / p.PVenta * 100, 0) +
                                                         0.5 * (
