@@ -17,7 +17,8 @@ import { getTasks,
         checkLogInData,
         changePassword,
         BottonCaroucel,
-        SendSale
+        SendSale,
+        getProductDetailAll
         } from '../controllers/tasks';
 
 
@@ -37,7 +38,7 @@ const router = Router();
  *  summary: Get all products
  *  tags: [products]
  */
-router.get('/tasks', getTasks)
+router.get('/app', getTasks)
 
 /**
  * @swagger
@@ -66,29 +67,31 @@ router.get('/tasks', getTasks)
  */
 /*router.get('/tasks/clientes/:cod', clientes)*/
 
-router.post('/tasks/validar', ValidarDatos)
+router.post('/app/validar', ValidarDatos)
 
-router.get('/tasks/BuscarClientesTodos/:cod', BuscarClientesTodos)
+router.get('/app/BuscarClientesTodos/:cod', BuscarClientesTodos)
 
-router.post('/tasks/aTablas', aTablas)
+router.post('/app/aTablas', aTablas)
 
-router.post('/tasks/con', consecutivos)
+router.post('/app/con', consecutivos)
 
-router.get('/tasks/DatosProgreso/:cod', DatosProgreso)
+router.get('/app/DatosProgreso/:cod', DatosProgreso)
 
-router.get('/tasks/PedidosEnviados/:cod', PedidosEnviados)
+router.get('/app/PedidosEnviados/:cod', PedidosEnviados)
 
-router.get('/tasks/DetallePedidoVendedor/:cod', DetalleDelPedidoVendedor)
+router.get('/app/DetallePedidoVendedor/:cod', DetalleDelPedidoVendedor)
 
-router.get('/tasks/PedidosCerrados/:cod', PedidosCerrados)
+router.get('/app/PedidosCerrados/:cod', PedidosCerrados)
 
-router.get('/tasks/PedidosPorEntregar/:cod', PedidosPorEntregar)
+router.get('/app/PedidosPorEntregar/:cod', PedidosPorEntregar)
 
-router.get('/tasks/DetallePedidoEntregas/:cod', DetallePedidoEntregas)
+router.get('/app/DetallePedidoEntregas/:cod', DetallePedidoEntregas)
 
-router.post('/tasks/ActualizarProcesoDelPedido', ActualizarProcesoDelPedido)
+router.post('/app/ActualizarProcesoDelPedido', ActualizarProcesoDelPedido)
 
-router.get('/tasks/DetallePedidoCerrado/:cod', DetallePedidoCerrado)
+router.get('/app/DetallePedidoCerrado/:cod', DetallePedidoCerrado)
+
+router.post('/app/getProductDetailAll', getProductDetailAll)
 
 
 //Routes for the webpage

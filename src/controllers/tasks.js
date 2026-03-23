@@ -26,6 +26,62 @@ export const getTasks = async(req, res) => {
       }
 };
 
+export const getProductDetailAll = async(req, res) => {
+    try {
+        const connection = await connect()
+        const [rows] = await connection.query(`SELECT
+                                                  p.Cod,
+                                                  p.Descripcion,
+                                                  p.EsUnidadOpaquete,
+                                                  p.PVenta,
+                                                  p.PCosto,
+                                                  prov.Proovedor,
+                                                  p.ImgName,
+                                                  (
+                                                      SELECT
+                                                          SUM(sa.Cantidad) / COUNT(DISTINCT YEAR(sa.FechaDeIngreso), MONTH(sa.FechaDeIngreso)) AS Promedio
+                                                      FROM
+                                                          salidas AS sa
+                                                      WHERE
+                                                          sa.Codigo = p.Cod -- Usamos p.Cod para que la subconsulta sea dinámica
+                                                          AND sa.FechaDeIngreso >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                                                  ) AS Promedio
+                                              FROM
+                                                  productos AS p
+                                              LEFT JOIN
+                                                  proovedores AS prov ON prov.Cod = p.CodProovedor
+                                              WHERE
+                                                  p.Cod = ?`,[req.body.Cod]);
+        const [OtrosP] = await connection.query(`select
+                                                  pro.Proovedor,
+                                                  op.Pcosto,
+                                                  op.Cantidad
+                                                from
+                                                  otrosproveedores as op
+                                                left join
+                                                  proovedores as pro on pro.Cod = op.CodP
+                                                where
+                                                  op.Cod = ?`,[req.body.Cod]);
+        const [LastPurchases] = await connection.query(`Select
+                                                          en.Proveedor,
+                                                          en.Fecha,
+                                                          en.Cantidad,
+                                                          en.Costo,
+                                                          en.Consecutivo
+                                                        from
+                                                          entradas as en
+                                                        where
+                                                          en.Codigo = ? and en.Fecha >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) and en.Consecutivo <> '0'`,[req.body.Cod]);
+
+        rows[0].OtrosProveedores = OtrosP
+        rows[0].LastPurchases = LastPurchases
+        res.json(rows[0])
+        connection.end()
+      } catch (error) {
+        console.log(error)
+      }
+};
+
 export const ValidarDatos = async(req, res) => {
     try {
         const connection = await connect()
