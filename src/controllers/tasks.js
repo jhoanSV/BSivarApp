@@ -14,7 +14,8 @@ export const getTasks = async(req, res) => {
                                                 p.PVenta,
                                                 p.Agotado,
                                                 p.Nota,
-                                                p.Detalle
+                                                p.Detalle,
+                                                p.ImgName
                                               FROM
                                                 productos AS p
                                               JOIN
@@ -114,13 +115,45 @@ export const BuscarClientesTodos = async(req, res) => {
                                                     c.Barrio,
                                                     r.nombreRuta AS Ruta,
                                                     c.Geolocalizacion,
-                                                    c.Nota
+                                                    c.Nota,
+                                                    c.Estado
                                               FROM
                                                     clientes AS c
                                               LEFT JOIN
                                                     rutas AS r ON r.codRuta= c.ruta
                                               WHERE
                                                     CodVendedor = ?`, [req.params.cod]);
+        res.json(rows)
+        connection.end()
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+export const CustomerDetail = async(req, res) => {
+    try {
+      console.log(req.body)
+      const connection = await connect()
+      const [rows] = await connection.query(`SELECT
+                                                  c.Cod,
+                                                  c.Nit,
+                                                  c.Ferreteria,
+                                                  c.Contacto,
+                                                  c.Telefono,
+                                                  c.Cel,
+                                                  c.Email,
+                                                  c.Direccion,
+                                                  c.Barrio,
+                                                  r.nombreRuta AS Ruta,
+                                                  c.Geolocalizacion,
+                                                  c.Nota,
+                                                  c.Estado
+                                            FROM
+                                                  clientes AS c
+                                            LEFT JOIN
+                                                  rutas AS r ON r.codRuta= c.ruta
+                                            WHERE
+                                                  c.Cod = ?`, [req.body.Cod]);
         res.json(rows)
         connection.end()
     } catch (error) {
@@ -165,17 +198,41 @@ export const DatosProgreso = async(req, res) => {
 export const PedidosEnviados = async(req, res) => {
     try {
         const connection = await connect()
-        const [rows] = await connection.query(`SELECT con.NDePedido,
-                                                      cli.Ferreteria,
-                                                      cli.Direccion,
-                                                      cli.Barrio,
-                                                      con.FechaFactura,
-                                                      con.FechaDeEntrega,
-                                                      con.VrFactura,
-                                                      con.Estado,
-                                                      con.ProcesoDelPedido,
-                                                      con.NotaVenta,
-                                                      con.NotaEntrega FROM clientes  AS cli INNER JOIN (SELECT te.NDePedido, te.CodCliente, DATE_FORMAT(te.FechaFactura, '%d-%m-%Y') AS FechaFactura, DATE_FORMAT(te.FechaDeEntrega, '%d-%m-%Y') AS FechaDeEntrega, SUM(ti.Cantidad*ti.VrUnitario) AS VrFactura , te.Estado, te.ProcesoDelPedido, te.NotaVenta, te.NotaEntrega FROM tabladeestados AS te INNER JOIN tabladeingresados AS ti ON te.NDePedido= ti.NDePedido AND te.Estado <> 'Cerrado' AND te.Estado <> 'Anulado' AND te.CodColaborador = ? GROUP BY te.NDePedido) AS con ON cli.Cod = con.CodCliente`, [req.params.cod]);
+        const [rows] = await connection.query(`SELECT
+                                                cli.Cod,
+                                                con.NDePedido,
+                                                cli.Ferreteria,
+                                                cli.Direccion,
+                                                cli.Barrio,
+                                                con.FechaFactura,
+                                                con.FechaDeEntrega,
+                                                con.VrFactura,
+                                                con.Estado,
+                                                con.ProcesoDelPedido,
+                                                con.NotaVenta,
+                                                con.NotaEntrega
+                                              FROM
+                                                clientes AS cli INNER JOIN (
+                                                  SELECT
+                                                    te.NDePedido,
+                                                    te.CodCliente,
+                                                    te.FechaFactura,
+                                                    te.FechaDeEntrega,
+                                                    SUM(ti.Cantidad * ti.VrUnitario) AS VrFactura,
+                                                    te.Estado,
+                                                    te.ProcesoDelPedido,
+                                                    te.NotaVenta,
+                                                    te.NotaEntrega
+                                                  FROM
+                                                    tabladeestados AS te
+                                                  INNER JOIN
+                                                    tabladeingresados AS ti ON te.NDePedido = ti.NDePedido
+                                                    AND te.Estado <> 'Cerrado'
+                                                    AND te.Estado <> 'Anulado'
+                                                    AND te.CodColaborador = ?
+                                                    GROUP BY te.NDePedido
+                                                  ) AS con ON cli.Cod = con.CodCliente
+                                              ORDER BY con.NDePedido DESC`, [req.params.cod]);
         res.json(rows)
         connection.end()
     } catch (error) {
@@ -208,7 +265,38 @@ export const DetalleDelPedidoVendedor = async(req, res) => {
 export const PedidosPorEntregar = async(req, res) => {
     try {
         const connection = await connect()
-        const [rows] = await connection.query("SELECT con.NDePedido ,cli.Ferreteria, cli.Direccion, cli.Barrio, con.FechaFactura, con.FechaDeEntrega, con.VrFactura , con.Estado, con.ProcesoDelPedido, con.NotaVenta, con.NotaEntrega FROM clientes  AS cli INNER JOIN (SELECT te.NDePedido, te.CodCliente, DATE_FORMAT(te.FechaFactura, '%d-%m-%Y') AS FechaFactura, DATE_FORMAT(te.FechaDeEntrega, '%d-%m-%Y') AS FechaDeEntrega, SUM(ti.Cantidad*ti.VrUnitario) AS VrFactura , te.Estado, te.ProcesoDelPedido, te.NotaVenta, te.NotaEntrega FROM tabladeestados AS te INNER JOIN flujodeestados AS ti ON te.NDePedido= ti.NDePedido AND te.Estado = 'Verificado' AND te.Repartidor = ? GROUP BY te.NDePedido) AS con ON cli.Cod = con.CodCliente", [req.params.cod]);
+        const [rows] = await connection.query(`SELECT
+                                                con.NDePedido,
+                                                con.CodCliente as Cod,
+                                                cli.Ferreteria,
+                                                cli.Direccion,
+                                                cli.Barrio,
+                                                con.FechaFactura,
+                                                con.FechaDeEntrega,
+                                                con.VrFactura,
+                                                con.Estado,
+                                                con.ProcesoDelPedido,
+                                                con.NotaVenta,
+                                                con.NotaEntrega
+                                              FROM
+                                                clientes AS cli 
+                                              INNER JOIN (
+                                                SELECT
+                                                  te.NDePedido,
+                                                  te.CodCliente,
+                                                  te.FechaFactura,
+                                                  te.FechaDeEntrega,
+                                                  SUM(ti.Cantidad*ti.VrUnitario) AS VrFactura,
+                                                  te.Estado,
+                                                  te.ProcesoDelPedido,
+                                                  te.NotaVenta,
+                                                  te.NotaEntrega
+                                                FROM
+                                                  tabladeestados AS te
+                                                INNER JOIN
+                                                  flujodeestados AS ti ON te.NDePedido = ti.NDePedido
+                                                  AND te.Estado = 'Verificado'
+                                                  AND te.Repartidor = ? GROUP BY te.NDePedido) AS con ON cli.Cod = con.CodCliente`, [req.params.cod]);
         res.json(rows)
         connection.end()
     } catch (error) {
@@ -580,7 +668,8 @@ export const BottonCaroucel = async(req, res) => {
 };
 
 
-export const SendSale = async (req, res) => {
+{/*
+  export const SendSale = async (req, res) => {
   try {
     const { TIngresados } = req.body;
     const connection = await connect();
@@ -645,4 +734,4 @@ export const SendSale = async (req, res) => {
     console.log(error);
     res.status(500).json({ error: 'Internal server error' });
   }
-};
+};*/}
